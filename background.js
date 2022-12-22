@@ -1,48 +1,32 @@
-(function () {
-  try {
-    chrome.webRequest.onCompleted.addListener(
-      function (details) {
-        // console.log("Details res obj", details);
-      },
-      { urls: ["<all_urls>"] },
-      []
-    );
-  } catch (err) {
-    console.log("Error", err);
-  }
-})();
-
 var currentTab;
 var version = "1.0";
-let result;
-let isTypeNotification = true;
+let problemId;
+let response;
 
 
-chrome.tabs.onActivated.addListener(async () => {
 
-    chrome.tabs.query(
-      //get current Tab
-      {
-        currentWindow: true,
-        active: true,
-      },
-      function (tabArray) {
-        currentTab = tabArray[0];
-        console.log("Current tab", currentTab);
-        if (!currentTab.url.startsWith("chrome:")) {
-          chrome.debugger.attach(
-            {
-              //debug at current tab
-              tabId: currentTab.id,
-            },
-            version,
-            onAttach.bind(null, currentTab.id)
-          );
-        }
+chrome.tabs.onUpdated.addListener(async () => {
+  chrome.tabs.query(
+    //get current Tab
+    {
+      currentWindow: true,
+      active: true,
+    },
+    function (tabArray) {
+      currentTab = tabArray[0];
+      if (!currentTab.url.startsWith("chrome:")) {
+        chrome.debugger.attach(
+          {
+            //debug at current tab
+            tabId: currentTab.id,
+          },
+          version,
+          onAttach.bind(null, currentTab.id)
+        );
       }
-    );
-  }
-);
+    }
+  );
+});
 
 function onAttach(tabId) {
   chrome.debugger
@@ -53,22 +37,15 @@ function onAttach(tabId) {
       },
       "Network.enable"
     )
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((e) => console.error("ERROR", e));
-
-  chrome.debugger.onEvent.addListener(allEventHandler);
 }
+chrome.debugger.onEvent.addListener(allEventHandler);
 
 function allEventHandler(debuggeeId, message, params) {
-  debugger;
   if (currentTab.id != debuggeeId.tabId) {
     return;
   }
 
   if (message == "Network.responseReceived") {
-    debugger;
     chrome.debugger.sendCommand(
       {
         tabId: debuggeeId.tabId,
@@ -78,12 +55,31 @@ function allEventHandler(debuggeeId, message, params) {
         requestId: params.requestId,
       },
       function (response) {
-        debugger;
-        let res = JSON.parse(response.body);
-        console.log("Parsed Response", res);
-          isTypeNotification=false;
-        
-        chrome.debugger.detach(debuggeeId);
+        if (response?.body) {
+          try {
+            let res = JSON.parse(response.body);
+            // console.log(
+            //   "Parsed Response",
+            //   res?.upid + " " + res?.result_code + " " + res?.time
+            // );
+            response = res;
+
+            if (
+              res?.upid &&
+              (res?.result_code == "accepted" ||
+                res?.result_code == "compile" || res?.result_code === "wrong") &&
+              res?.time
+            ) {
+              chrome.tabs.sendMessage(currentTab.id, {
+                problemId: problemId,
+                resultCode:
+                  res?.result_code === "compile"
+                    ? "having compilation error"
+                    : res?.result_code,
+              });
+            }
+          } catch (e) {}
+        }
       }
     );
   }
@@ -96,14 +92,18 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
 
   switch (message.action) {
     case "receiveBodyText": {
-      result = sender.tab.url.substring(sender.tab.url.lastIndexOf("/") + 1);
+      problemId = sender.tab.url.substring(sender.tab.url.lastIndexOf("/") + 1);
       break;
     }
   }
 
   if (message && message.type === "notification") {
     isTypeNotification = true;
-    let datum = { ...message.options, message: `Problem ${result} is solved` };
+
+    let datum = {
+      ...message.options,
+    };
+
     chrome.notifications.create("", datum);
   }
 });

@@ -1,23 +1,5 @@
 let btn;
 
-function attachEventListener(){
-
-  btn.addEventListener("click", () => {
-    /**
-     * Notifications
-     */
-    chrome.runtime.sendMessage("", {
-      type: "notification",
-      options: {
-        title: "hey",
-        message: "How great it is!",
-        iconUrl: "./images/codechef_thumbnail.jpg",
-        type: "basic",
-      },
-    });
-  });
-}
-
 window.addEventListener(
   "load",
   function () {
@@ -28,13 +10,19 @@ window.addEventListener(
         action: "receiveBodyText",
         bodyText: bodyText,
       });
-      
     }, 1000);
-    attachEventListener();
   },
   false
 );
 
-
-
-
+chrome.runtime.onMessage.addListener((message) => {
+  chrome.runtime.sendMessage("", {
+    type: "notification",
+    options: {
+      title: "Hello CodeChefer",
+      message: `Submission of problem ${message?.problemId} is ${message?.resultCode}`,
+      iconUrl: "./images/codechef_thumbnail.jpg",
+      type: "basic",
+    },
+  });
+});
