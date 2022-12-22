@@ -15,7 +15,7 @@
 var currentTab;
 var version = "1.0";
 
-async function onTab()  {
+async function onTab() {
   chrome.tabs.query(
     //get current Tab
     {
@@ -37,7 +37,7 @@ async function onTab()  {
       }
     }
   );
-};
+}
 
 function onAttach(tabId) {
   chrome.debugger
@@ -51,13 +51,12 @@ function onAttach(tabId) {
     .then((res) => {
       console.log(res);
     })
-    .catch((e) => console.error("ERROR",e));
+    .catch((e) => console.error("ERROR", e));
 
   chrome.debugger.onEvent.addListener(allEventHandler);
 }
 
 function allEventHandler(debuggeeId, message, params) {
-  console.log("M", message, "params", params);
   if (currentTab.id != debuggeeId.tabId) {
     return;
   }
@@ -73,9 +72,6 @@ function allEventHandler(debuggeeId, message, params) {
         requestId: params.requestId,
       },
       function (response) {
-        console.log("Respo", response);
-        // you get the response body here!
-        // you can close the debugger tips by:
         let res = JSON.parse(response.body);
         console.log("Parsed Response", res);
         chrome.debugger.detach(debuggeeId);
@@ -84,36 +80,25 @@ function allEventHandler(debuggeeId, message, params) {
   }
 }
 
-chrome.runtime.onMessage.addListener(function(message, sender){
-    
-  if (!message || typeof message !== 'object' || !sender.tab){
-      // Ignore messages that weren't sent by our content script.
-      return;
+chrome.runtime.onMessage.addListener(function (message, sender) {
+  if (!message || typeof message !== "object" || !sender.tab) {
+    // Ignore messages that weren't sent by our content script.
+    return;
   }
-  
-  switch (message.action){
-      case 'receiveBodyText': {
-          console.log(message);
-          console.log(sender);
-          console.log(sender.tab, message.bodyText);
-          break;
-      }
+
+  switch (message.action) {
+    case "receiveBodyText": {
+      let result = sender.tab.url.substring(
+        sender.tab.url.lastIndexOf("/") + 1
+      );
+      break;
+    }
   }
 });
 
 // chrome.runtime.onMessage.addListener((data,sender) => {
-//   // if (data.type === 'notification') {
-//   //   console.log('c', data.options.contextMessage);
-//   //   chrome.notifications.create('', data.options);
-//   // }
-//   // else{
-//     debugger;
-//     console.log("Data", data);
-//     switch (data.action){
-//       case 'receiveBodyText': {
-//           processBodyText(sender.tab, message.bodyText);
-//           break;
-//       }
+//   if (data.type === 'notification') {
+//     // console.log('c', data.options.contextMessage);
+//     chrome.notifications.create('', data.options);
 //   }
-//   // }
 // });
