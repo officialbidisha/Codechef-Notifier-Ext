@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "CodechefNotifier",
+    "version": "1.0",
+    "description": "Notifier for CodeChef",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "permissions": [
+        "webRequest", "debugger", "tabs", "<all_urls>", "notifications"
+    ],
+    "host_permissions": [
+        "https://www.codechef.com/"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts":[
+        {
+            "matches":["https://*/*", "https://*/*"],
+            "js":["contentScript.js"]
+        }
+    ]
+
+}
