@@ -2,7 +2,7 @@
   try {
     chrome.webRequest.onCompleted.addListener(
       function (details) {
-        console.log("Details res obj", details);
+        // console.log("Details res obj", details);
       },
       { urls: ["<all_urls>"] },
       []
@@ -84,8 +84,36 @@ function allEventHandler(debuggeeId, message, params) {
   }
 }
 
-chrome.runtime.onMessage.addListener(data => {
-  if (data.type === 'notification') {
-    chrome.notifications.create('', data.options);
+chrome.runtime.onMessage.addListener(function(message, sender){
+    
+  if (!message || typeof message !== 'object' || !sender.tab){
+      // Ignore messages that weren't sent by our content script.
+      return;
+  }
+  
+  switch (message.action){
+      case 'receiveBodyText': {
+          console.log(message);
+          console.log(sender);
+          console.log(sender.tab, message.bodyText);
+          break;
+      }
   }
 });
+
+// chrome.runtime.onMessage.addListener((data,sender) => {
+//   // if (data.type === 'notification') {
+//   //   console.log('c', data.options.contextMessage);
+//   //   chrome.notifications.create('', data.options);
+//   // }
+//   // else{
+//     debugger;
+//     console.log("Data", data);
+//     switch (data.action){
+//       case 'receiveBodyText': {
+//           processBodyText(sender.tab, message.bodyText);
+//           break;
+//       }
+//   }
+//   // }
+// });

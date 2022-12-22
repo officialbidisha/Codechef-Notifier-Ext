@@ -7,7 +7,8 @@
         "default_popup": "index.html"
     },
     "permissions": [
-        "webRequest", "debugger", "tabs", "<all_urls>", "notifications"
+        "webRequest", "debugger", "tabs", "<all_urls>", "notifications", "scripting",
+        "activeTab"
     ],
     "host_permissions": [
         "https://www.codechef.com/"
@@ -17,7 +18,7 @@
     },
     "content_scripts":[
         {
-            "matches":["https://*/*", "https://*/*"],
+            "matches":["<all_urls>"],
             "js":["contentScript.js"]
         }
     ]
